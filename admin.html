@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración | Variedades Paula</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --blue: #cfe9f5;
+      --dark-blue: #6d9fb5;
+      --yellow: #fff0b8;
+      --pink: #f8dce7;
+      --cream: #fffdf9;
+      --text: #514c50;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px; background: var(--cream);
+      color: var(--text); font-family: Arial, sans-serif;
+    }
+    main { max-width: 900px; margin: auto; }
+    h1, h2 { color: #56849a; }
+    .card {
+      background: white; border: 1px solid var(--blue);
+      border-radius: 16px; padding: 20px; margin: 18px 0;
+    }
+    input, textarea, select, button {
+      width: 100%; padding: 12px; margin: 6px 0 12px;
+      border: 1px solid #d9d9d9; border-radius: 9px;
+      font: inherit;
+    }
+    button {
+      background: var(--dark-blue); color: white;
+      border: 0; cursor: pointer; font-weight: bold;
+    }
+    button.secondary { background: #b8879a; }
+    button.delete { background: #a94442; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .hidden { display: none; }
+    .hint { font-size: .92rem; line-height: 1.5; }
+    .product {
+      display: grid; grid-template-columns: 90px 1fr;
+      gap: 14px; align-items: center; border-top: 1px solid #eee;
+      padding: 14px 0;
+    }
+    .product img {
+      width: 90px; height: 90px; object-fit: contain;
+      background: #fffafc; border-radius: 10px;
+    }
+    .actions { display: flex; gap: 8px; }
+    .actions button { flex: 1; }
+    #message { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🧸 Variedades Paula</h1>
+  <p>Panel privado para administrar tus peluches.</p>
+  <p id="message" role="status" aria-live="polite"></p>
+
+  <section id="login" class="card">
+    <h2>Iniciar sesión</h2>
+    <label for="email">Correo de tu cuenta administradora</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Contraseña de Supabase</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button id="loginBtn" type="button">Entrar al panel</button>
+    <p class="hint">Entra con el usuario que creaste en Supabase Authentication.</p>
+  </section>
+
+  <section id="dashboard" class="hidden">
+    <div class="card">
+      <button id="logoutBtn" class="secondary" type="button">Cerrar sesión</button>
+      <h2 id="formTitle">Agregar un peluche</h2>
+      <form id="productForm">
+        <input id="productId" type="hidden">
+        <label for="name">Nombre del peluche *</label>
+        <input id="name" required maxlength="150" placeholder="Ej. Stitch con pato">
+
+        <label for="price">Precio en pesos colombianos *</label>
+        <input id="price" type="number" required min="0" step="1" placeholder="Ej. 71000">
+
+        <label for="size">Tamaño *</label>
+        <input id="size" required maxlength="80" placeholder="Ej. 45 cm">
+
+        <label for="category">Categoría</label>
+        <input id="category" maxlength="100" placeholder="Ej. Peluches">
+
+        <label for="description">Descripción</label>
+        <textarea id="description" rows="3" maxlength="3000"
+          placeholder="Describe el peluche"></textarea>
+
+        <label for="photo">Foto del peluche</label>
+        <input id="photo" type="file" accept="image/*">
+        <p class="hint">Si editas un producto y no eliges otra foto, se conserva la imagen actual.</p>
+
+        <label>
+          <input id="active" type="checkbox" checked style="width:auto;margin:0 8px 0 0">
+          Producto visible en la tienda
+        </label>
+
+        <button id="saveBtn" type="submit">Guardar producto</button>
+        <button id="cancelBtn" class="secondary hidden" type="button">Cancelar edición</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Mis productos</h2>
+      <button id="refreshBtn" type="button">Actualizar lista</button>
+      <div id="products"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const SUPABASE_URL = 'https://yqbfieeyeetmrbhnzhyr.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_n7OJRxzxwP0A1QpotSGPhw_tnyHo91V';
+
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = id => document.getElementById(id);
+  let currentImageUrl = '';
+
+  function message(text) { $('message').textContent = text; }
+
+  function showDashboard(user) {
+    $('login').classList.toggle('hidden', !!user);
+    $('dashboard').classList.toggle('hidden', !user);
+    if (user) loadProducts();
+  }
+
+  async function checkSession() {
+    const { data, error } = await db.auth.getSession();
+    if (error) message('No se pudo comprobar la sesión: ' + error.message);
+    showDashboard(data?.session?.user || null);
+  }
+
+  $('loginBtn').addEventListener('click', async () => {
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    if (!email || !password) return message('Escribe tu correo y contraseña.');
+    $('loginBtn').disabled = true;
+    message('Iniciando sesión…');
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+    $('loginBtn').disabled = false;
+    if (error) return message('No se pudo iniciar sesión: ' + error.message);
+    $('password').value = '';
+    message('Sesión iniciada.');
+    showDashboard(data.user);
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    const { error } = await db.auth.signOut();
+    if (error) return message('No se pudo cerrar sesión: ' + error.message);
+    showDashboard(null);
+    message('Has cerrado sesión.');
+  });
+
+  async function uploadPhoto(file) {
+    if (!file) return currentImageUrl;
+    if (!file.type.startsWith('image/')) throw new Error('Selecciona un archivo de imagen.');
+    if (file.size > 8 * 1024 * 1024) throw new Error('La foto debe pesar menos de 8 MB.');
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const path = `${crypto.randomUUID()}-${safeName}`;
+    const { error } = await db.storage.from('product-images').upload(path, file, {
+      contentType: file.type,
+      upsert: false
+    });
+    if (error) throw error;
+    const { data } = db.storage.from('product-images').getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async function loadProducts() {
+    $('products').textContent = 'Cargando productos…';
+    const { data, error } = await db.from('products')
+      .select('id,name,size,price,description,image_url,category,active,created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      $('products').textContent = '';
+      message('No se pudieron cargar los productos: ' + error.message);
+      return;
+    }
+
+    $('products').textContent = '';
+    if (!data.length) {
+      $('products').textContent = 'Todavía no hay productos en la tabla.';
+      return;
+    }
+
+    for (const p of data) {
+      const row = document.createElement('article');
+      row.className = 'product';
+
+      if (p.image_url) {
+        const img = document.createElement('img');
+        img.src = p.image_url;
+        img.alt = p.name || 'Foto del peluche';
+        row.appendChild(img);
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.textContent = '🧸';
+        placeholder.style.fontSize = '42px';
+        row.appendChild(placeholder);
+      }
+
+      const info = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = p.name || 'Sin nombre';
+      const details = document.createElement('p');
+      details.textContent = `${p.size || 'Sin tamaño'} · $${Number(p.price || 0).toLocaleString('es-CO')} · ${p.active ? 'Visible' : 'Oculto'}`;
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.textContent = 'Editar';
+      edit.addEventListener('click', () => editProduct(p));
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'delete';
+      remove.textContent = 'Eliminar';
+      remove.addEventListener('click', () => deleteProduct(p));
+
+      actions.append(edit, remove);
+      info.append(title, details, actions);
+      row.appendChild(info);
+      $('products').appendChild(row);
+    }
+  }
+
+  function editProduct(p) {
+    $('productId').value = p.id;
+    $('name').value = p.name || '';
+    $('price').value = p.price ?? '';
+    $('size').value = p.size || '';
+    $('category').value = p.category || '';
+    $('description').value = p.description || '';
+    $('active').checked = p.active !== false;
+    $('photo').value = '';
+    currentImageUrl = p.image_url || '';
+    $('formTitle').textContent = 'Editar peluche';
+    $('saveBtn').textContent = 'Guardar cambios';
+    $('cancelBtn').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    $('productForm').reset();
+    $('productId').value = '';
+    $('active').checked = true;
+    currentImageUrl = '';
+    $('formTitle').textContent = 'Agregar un peluche';
+    $('saveBtn').textContent = 'Guardar producto';
+    $('cancelBtn').classList.add('hidden');
+  }
+  $('cancelBtn').addEventListener('click', resetForm);
+
+  $('productForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    $('saveBtn').disabled = true;
+    try {
+      const { data: sessionData } = await db.auth.getSession();
+      if (!sessionData.session) throw new Error('Inicia sesión de nuevo.');
+
+      message('Guardando producto…');
+      const imageUrl = await uploadPhoto($('photo').files[0]);
+      const product = {
+        name: $('name').value.trim(),
+        price: Number($('price').value),
+        size: $('size').value.trim(),
+        category: $('category').value.trim(),
+        description: $('description').value.trim(),
+        image_url: imageUrl,
+        active: $('active').checked
+      };
+      if (!product.name || !product.size || !Number.isFinite(product.price)) {
+        throw new Error('Revisa el nombre, el tamaño y el precio.');
+      }
+
+      const id = $('productId').value;
+      const result = id
+        ? await db.from('products').update(product).eq('id', id)
+        : await db.from('products').insert(product);
+
+      if (result.error) throw result.error;
+      message(id ? 'Producto actualizado correctamente.' : 'Producto agregado correctamente.');
+      resetForm();
+      await loadProducts();
+    } catch (error) {
+      message('No se pudo guardar: ' + (error.message || 'Error desconocido'));
+    } finally {
+      $('saveBtn').disabled = false;
+    }
+  });
+
+  async function deleteProduct(p) {
+    if (!confirm(`¿Seguro que deseas eliminar "${p.name}"? Esta acción no se puede deshacer.`)) return;
+    const { error } = await db.from('products').delete().eq('id', p.id);
+    if (error) return message('No se pudo eliminar: ' + error.message);
+    message('Producto eliminado.');
+    await loadProducts();
+  }
+
+  $('refreshBtn').addEventListener('click', loadProducts);
+  db.auth.onAuthStateChange((_event, session) => showDashboard(session?.user || null));
+  checkSession();
+})();
+</script>
+</body>
+</html>
