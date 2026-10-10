@@ -537,22 +537,20 @@ a:focus-visible,button:focus-visible{outline:3px solid #56849a;outline-offset:4p
 #catalogo .buy:disabled,.product-modal .modal-buy:disabled{background:#e8ecee!important;color:#596975!important;border-color:#cbd5da!important;opacity:1;box-shadow:none;cursor:not-allowed}
 @media(max-width:650px){#catalogo .new-badge{font-size:10px;padding:5px 9px;letter-spacing:.6px}#catalogo .buy{border-radius:12px!important}}
 </style>
-<style id="paula-offer-carousel">.offer-section[hidden]{display:none!important}
-.offer-showcase{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;padding:32px;border:1px solid #d6e5eb;border-radius:28px;background:linear-gradient(125deg,#eef8fc,#fff8df);box-shadow:0 8px 24px #244b550b}
-.offer-eyebrow{font-size:13px;letter-spacing:1px;color:#526577;margin-bottom:10px}
-.offer-copy h2{font:600 38px/1.2 Georgia,serif;color:#244b55;margin-bottom:20px}
-.offer-copy h3{font:600 25px/1.35 Georgia,serif;color:#34495a;margin-bottom:8px;overflow-wrap:anywhere}
-#offerSize{font-size:15px;color:#526577}
-.offer-showcase-price{font:bold 28px/1.3 "Trebuchet MS",Arial,sans-serif;color:#244b55;margin:16px 0 22px}
-.offer-view{background:#244b55!important;color:white!important;border:1.5px solid #c5ad76;min-height:48px;border-radius:14px!important;box-shadow:none}
-.offer-view:hover{background:#183c45!important}
-.offer-photo{position:relative;min-width:0;border:1px solid #dcebf2;background:#fff;border-radius:22px;aspect-ratio:1;overflow:hidden;padding:22px}
-.offer-photo img{display:block;width:100%;height:100%;object-fit:contain}
-.offer-controls{display:flex;align-items:center;gap:10px;margin-top:22px;color:#526577;font-size:13px}
-.offer-controls button{min-width:44px;min-height:44px;border:1px solid #bfd8e4;border-radius:12px;background:#fff;color:#244b55;font:600 22px Arial;cursor:pointer}
-#offerPause{font-size:13px;padding:10px 14px;margin-left:4px}
-.offer-controls button:disabled{opacity:.45;cursor:default}
-@media(max-width:650px){.offer-showcase{grid-template-columns:1fr;gap:22px;padding:22px 18px;border-radius:22px}.offer-photo{grid-row:1;aspect-ratio:4/3;padding:16px}.offer-copy h2{font-size:29px;margin-bottom:14px}.offer-copy h3{font-size:23px}.offer-showcase-price{font-size:25px;margin:12px 0 18px}.offer-view{width:100%;text-align:center}.offer-controls{justify-content:center;margin-top:16px}}
+<style id="paula-offer-carousel">
+.offer-section[hidden]{display:none!important}
+#offerHeading{margin-bottom:24px}
+.offer-showcase{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;padding:32px;border-radius:34px;background:linear-gradient(135deg,#fff0f4,#f4effb);box-shadow:var(--sombra)}
+.offer-copy{min-width:0}
+.offer-copy h3{font:600 38px/1.15 Georgia,serif;color:#76566a;margin:10px 0 14px;overflow-wrap:anywhere}
+#offerSize{display:inline-block;font-size:13px;color:#a75f7d;background:#fff;padding:7px 12px;border-radius:20px;margin-right:6px}
+.offer-showcase-price{display:inline-block;font:bold 15px Georgia,serif;color:#a75f7d;margin:0 0 12px}
+.offer-description{color:#7b7078;line-height:1.8;font-size:15px;margin:4px 0 20px;overflow-wrap:anywhere}
+.offer-view{background:#244b55!important;color:#fff!important;border:1.5px solid #c5ad76;min-height:46px;border-radius:24px!important;font-size:14px;box-shadow:none}
+.offer-photo{position:relative;min-width:0;height:340px;border-radius:28px;background:rgba(255,255,255,.65);padding:20px;display:flex;align-items:center;justify-content:center}
+.offer-photo img{width:100%;height:100%;object-fit:contain;border-radius:20px}
+@media(max-width:850px){.offer-showcase{grid-template-columns:1fr}.offer-copy{text-align:center}.offer-copy h3{font-size:31px}.offer-photo{height:300px}}
+@media(max-width:650px){.offer-showcase{padding:22px 18px;border-radius:24px;gap:20px}.offer-photo{grid-row:1;height:260px;padding:14px;border-radius:22px}.offer-copy h3{font-size:28px}.offer-description{font-size:14px;line-height:1.7}.offer-view{width:100%}}
 </style>
 </head>
 <body>
@@ -604,20 +602,15 @@ a:focus-visible,button:focus-visible{outline:3px solid #56849a;outline-offset:4p
 </section>
 
 <section class="section offer-section" id="offerSection" aria-labelledby="offerHeading" hidden>
+ <h2 class="title" id="offerHeading">En oferta</h2>
  <div class="offer-showcase">
   <div class="offer-copy">
-   <p class="offer-eyebrow">Un detalle para aprovechar</p>
-   <h2 id="offerHeading">En oferta</h2>
    <h3 id="offerName"></h3>
    <p id="offerSize"></p>
    <p class="offer-showcase-price" id="offerPrice"></p>
+   <p class="offer-description" id="offerDescription"></p>
    <button class="btn offer-view" id="offerView" type="button">Ver producto →</button>
-   <div class="offer-controls" aria-label="Controles de productos en oferta">
-    <button id="offerPrevious" type="button" aria-label="Oferta anterior">‹</button>
-    <span id="offerPosition"></span>
-    <button id="offerNext" type="button" aria-label="Oferta siguiente">›</button>
-    <button id="offerPause" type="button" aria-label="Pausar cambio automático" aria-pressed="false">Pausar</button>
-   </div>
+
   </div>
   <div class="offer-photo">
    <span class="offer-badge" aria-label="Oferta especial"><span>OFERTA</span><span>ESPECIAL</span></span>
@@ -1095,20 +1088,15 @@ function renderOfferCarousel(){
  document.getElementById('offerName').textContent=p.name;
  document.getElementById('offerSize').textContent=p.measure;
  document.getElementById('offerPrice').textContent=money(p.price);
+ document.getElementById('offerDescription').textContent=p.desc||'Un detalle especial para regalar una sonrisa.';
  const img=document.getElementById('offerImage');
  if(img.dataset.productId!==p.id||img.dataset.imageUrl!==p.image){delete img.dataset.fallback;img.src=p.image||fallbackLogo;img.dataset.productId=p.id;img.dataset.imageUrl=p.image;}
  img.alt=p.name;
  document.getElementById('offerView').onclick=()=>openProduct(p.id);
- document.getElementById('offerPosition').textContent=`${offerIndex+1} / ${offerProducts.length}`;
- for(const id of ['offerPrevious','offerNext','offerPause'])document.getElementById(id).disabled=offerProducts.length<2;
+
+
 }
 function moveOffer(direction){if(offerProducts.length<2)return;offerIndex=(offerIndex+direction+offerProducts.length)%offerProducts.length;renderOfferCarousel();}
-document.getElementById('offerPrevious').onclick=()=>moveOffer(-1);
-document.getElementById('offerNext').onclick=()=>moveOffer(1);
-document.getElementById('offerPause').onclick=()=>{
- offerPaused=!offerPaused;const button=document.getElementById('offerPause');
- button.textContent=offerPaused?'Reanudar':'Pausar';button.setAttribute('aria-pressed',String(offerPaused));button.setAttribute('aria-label',offerPaused?'Reanudar cambio automático':'Pausar cambio automático');
-};
 const offerSection=document.getElementById('offerSection');
 offerSection.addEventListener('mouseenter',()=>{offerHover=true;});
 offerSection.addEventListener('mouseleave',()=>{offerHover=false;});
