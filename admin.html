@@ -113,6 +113,12 @@
           Producto visible en la tienda
         </label>
 
+        <label for="specialOffer" style="background:#fff2c6;padding:14px;border-radius:12px;display:flex;align-items:center;gap:10px">
+          <input id="specialOffer" type="checkbox" style="width:20px;height:20px;margin:0">
+          🎉 Oferta especial
+        </label>
+        <p class="hint">Activa esta casilla para mostrar la etiqueta Oferta especial en este producto.</p>
+
         <button id="saveBtn" type="submit">Guardar producto</button>
         <button id="cancelBtn" class="secondary hidden" type="button">Cancelar edición</button>
       </form>
@@ -135,8 +141,10 @@
   const $ = id => document.getElementById(id);
   let currentImageUrl = '';
   const SOLD_OUT_MARKER='[[VP_AGOTADO]]';
+  const SPECIAL_OFFER_MARKER='[[VP_OFERTA_ESPECIAL]]';
+  const hasSpecialOffer=p=>String(p.description||'').includes(SPECIAL_OFFER_MARKER);
   const isAvailable=p=>!String(p.description||'').includes(SOLD_OUT_MARKER);
-  const cleanDescription=value=>String(value||'').split(SOLD_OUT_MARKER).join('').trim();
+  const cleanDescription=value=>String(value||'').split(SOLD_OUT_MARKER).join('').split(SPECIAL_OFFER_MARKER).join('').trim();
 
   function message(text) { $('message').textContent = text; }
 
@@ -227,7 +235,7 @@
       const title = document.createElement('strong');
       title.textContent = p.name || 'Sin nombre';
       const details = document.createElement('p');
-      details.textContent = `${p.size || 'Sin tamaño'} · $${Number(p.price || 0).toLocaleString('es-CO')} · ${p.active ? 'Visible' : 'Oculto'} · ${isAvailable(p)?'Disponible':'Agotado'}`;
+      details.textContent = `${p.size || 'Sin tamaño'} · $${Number(p.price || 0).toLocaleString('es-CO')} · ${p.active ? 'Visible' : 'Oculto'} · ${isAvailable(p)?'Disponible':'Agotado'}${hasSpecialOffer(p)?' · 🎉 Oferta especial':''}`;
       const actions = document.createElement('div');
       actions.className = 'actions';
 
@@ -265,6 +273,7 @@
     }else categorySelect.value='';
     $('description').value = cleanDescription(p.description);
     $('available').value = isAvailable(p)?'yes':'no';
+    $('specialOffer').checked = hasSpecialOffer(p);
     $('active').checked = p.active !== false;
     $('photo').value = '';
     currentImageUrl = p.image_url || '';
@@ -278,6 +287,7 @@
     $('productForm').reset();
     $('productId').value = '';
     $('active').checked = true;
+    $('specialOffer').checked = false;
     currentImageUrl = '';
     $('formTitle').textContent = 'Agregar un peluche';
     $('saveBtn').textContent = 'Guardar producto';
@@ -299,7 +309,7 @@
         price: Number($('price').value),
         size: $('size').value.trim(),
         category: $('category').value.trim(),
-        description: cleanDescription($('description').value) + ($('available').value==='no'?'\n'+SOLD_OUT_MARKER:''),
+        description: cleanDescription($('description').value) + ($('available').value==='no'?'\n'+SOLD_OUT_MARKER:'') + ($('specialOffer').checked?'\n'+SPECIAL_OFFER_MARKER:''),
         image_url: imageUrl,
         active: $('active').checked
       };

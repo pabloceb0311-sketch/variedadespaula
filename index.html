@@ -517,6 +517,12 @@ a:focus-visible,button:focus-visible{outline:3px solid #56849a;outline-offset:4p
 }
 
 </style>
+<style id="paula-special-offers">
+.offer-badge{position:absolute;top:12px;left:12px;z-index:2;background:#fff0b8;color:#34495a;font:700 13px "Trebuchet MS",Arial,sans-serif;padding:8px 11px;border:1px solid #e5d79f;border-radius:12px;box-shadow:0 3px 10px #34495a15;max-width:calc(100% - 24px)}
+.offer-detail{align-self:flex-start;background:#fff0b8;color:#34495a!important;border:1px solid #e5d79f;border-radius:12px;padding:9px 13px;font-size:14px;font-weight:bold;margin-bottom:16px!important}
+.offer-detail[hidden]{display:none!important}
+@media(max-width:650px){.offer-badge{top:8px;left:8px;font-size:11px;line-height:1.3;padding:6px 8px;max-width:calc(100% - 16px)}}
+</style>
 </head>
 <body>
 <header>
@@ -703,6 +709,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #56849a;outline-offset:4p
   <div class="product-modal-info">
    <h2 id="productTitle"></h2>
    <div class="modal-price" id="productPrice"></div>
+   <p class="offer-detail" id="productSpecialOffer" hidden>🎉 Oferta especial</p>
    <p class="modal-measure"><b>📏 Medidas:</b> <span id="productMeasure"></span></p>
    <p id="productDescription"></p>
    <p class="availability" id="productAvailability"></p>
@@ -749,9 +756,10 @@ function clearProductSearch(){
  const input=document.getElementById('paulaSearch');input.value='';applySearch();input.focus();
 }
 const SOLD_OUT_MARKER='[[VP_AGOTADO]]';
+const SPECIAL_OFFER_MARKER='[[VP_OFERTA_ESPECIAL]]';
 function productFromRow(p){
  const description=String(p.description||'');
- return {id:String(p.id),name:p.name||'Peluche',price:Number(p.price)||0,measure:p.size||'Consultar medidas',desc:description.split(SOLD_OUT_MARKER).join('').trim(),available:!description.includes(SOLD_OUT_MARKER),cat:String(p.category||'').trim().toLowerCase(),image:safeImage(p.image_url)||fallbackLogo,emoji:'🧸',createdAt:p.created_at};
+ return {id:String(p.id),name:p.name||'Peluche',price:Number(p.price)||0,measure:p.size||'Consultar medidas',desc:description.split(SOLD_OUT_MARKER).join('').split(SPECIAL_OFFER_MARKER).join('').trim(),specialOffer:description.includes(SPECIAL_OFFER_MARKER),available:!description.includes(SOLD_OUT_MARKER),cat:String(p.category||'').trim().toLowerCase(),image:safeImage(p.image_url)||fallbackLogo,emoji:'🧸',createdAt:p.created_at};
 }
 function isNewProduct(p,now=Date.now()){
  const created=Date.parse(p.createdAt||'');
@@ -850,7 +858,7 @@ function renderProducts(cat=currentCategory){
  if(!list.length){const message=document.createElement('p');message.className='catalog-empty';message.setAttribute('role','status');message.textContent=!catalogLoaded?'Cargando productos…':query.trim()?'No encontramos productos con esa búsqueda. Prueba con otro nombre o categoría.':'No hay productos disponibles en esta categoría.';grid.append(message);return;}
  for(const p of list){
   const card=document.createElement('article');card.className='card';card.style.cursor='pointer';card.onclick=()=>openProduct(p.id);
-  card.innerHTML=`${isNewProduct(p)?'<span class="new-badge">Nuevo</span>':''}<div class="pic" title="Haz clic para ver el producto">${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" loading="lazy" decoding="async">`:p.emoji}</div><div class="info"><h3>${escapeHTML(p.name)} <span class="product-size">(${escapeHTML(p.measure)})</span></h3><span class="availability ${p.available===false?'sold-out':''}">${p.available===false?'Agotado':'Disponible'}</span><div class="price">${money(p.price)}</div><button class="buy" ${p.available===false?'disabled':''}>${p.available===false?'Agotado':'Agregar al carrito 🛒'}</button><a class="product-whatsapp" href="${escapeHTML(productWhatsAppUrl(p))}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp 💬</a><button class="share-product" type="button">Compartir producto ↗</button></div>`;
+  card.innerHTML=`${p.specialOffer?'<span class="offer-badge">🎉 Oferta especial</span>':isNewProduct(p)?'<span class="new-badge">Nuevo</span>':''}<div class="pic" title="Haz clic para ver el producto">${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" loading="lazy" decoding="async">`:p.emoji}</div><div class="info"><h3>${escapeHTML(p.name)} <span class="product-size">(${escapeHTML(p.measure)})</span></h3><span class="availability ${p.available===false?'sold-out':''}">${p.available===false?'Agotado':'Disponible'}</span><div class="price">${money(p.price)}</div><button class="buy" ${p.available===false?'disabled':''}>${p.available===false?'Agotado':'Agregar al carrito 🛒'}</button><a class="product-whatsapp" href="${escapeHTML(productWhatsAppUrl(p))}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp 💬</a><button class="share-product" type="button">Compartir producto ↗</button></div>`;
   card.querySelector('.share-product').onclick=event=>{event.stopPropagation();shareProduct(p.id)};
   card.querySelector('a').onclick=event=>event.stopPropagation();
   card.querySelector('button').onclick=event=>{event.stopPropagation();add(p.id)};grid.append(card);
@@ -937,6 +945,7 @@ function openProduct(id){
  delete img.dataset.fallback;img.src=p.image||fallbackLogo;
  img.alt=p.name;
  resetZoom();
+ document.getElementById('productSpecialOffer').hidden=!p.specialOffer;
  const availability=document.getElementById('productAvailability');
  availability.textContent=p.available===false?'Agotado':'Disponible';
  availability.className='availability'+(p.available===false?' sold-out':'');
