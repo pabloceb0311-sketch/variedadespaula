@@ -539,7 +539,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #56849a;outline-offset:4p
 </style>
 <style id="paula-offer-carousel">
 .offer-section[hidden]{display:none!important}
-#offerHeading{margin-bottom:24px}
+#offerHeading{font-family:inherit;font-size:12px;line-height:1.8;letter-spacing:3px;text-transform:uppercase;color:#a77b91;font-weight:bold;margin:0 0 10px}
 .offer-showcase{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;padding:32px;border-radius:34px;background:linear-gradient(135deg,#fff0f4,#f4effb);box-shadow:var(--sombra)}
 .offer-copy{min-width:0}
 .offer-copy h3{font:600 38px/1.15 Georgia,serif;color:#76566a;margin:10px 0 14px;overflow-wrap:anywhere}
@@ -602,9 +602,10 @@ a:focus-visible,button:focus-visible{outline:3px solid #56849a;outline-offset:4p
 </section>
 
 <section class="section offer-section" id="offerSection" aria-labelledby="offerHeading" hidden>
- <h2 class="title" id="offerHeading">En oferta</h2>
+ 
  <div class="offer-showcase">
   <div class="offer-copy">
+   <h2 class="eyebrow" id="offerHeading">En oferta</h2>
    <h3 id="offerName"></h3>
    <p id="offerSize"></p>
    <p class="offer-showcase-price" id="offerPrice"></p>
