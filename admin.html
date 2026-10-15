@@ -95,8 +95,10 @@
           <option value="Anchetas">🎁 Anchetas</option>
           <option value="Llaveros">🔑 Llaveros</option>
           <option value="Especiales">💝 Especiales</option>
+          <option value="Licencias">Licencias</option>
         </select>
 
+<div id="licenseField" hidden><label for="license">Licencia del peluche</label><select id="license"><option value="">Detectar por el nombre</option><option value="disney">Disney</option><option value="snoopy">Snoopy</option><option value="superheroes">Superhéroes</option><option value="sanrio">Hello Kitty</option><option value="dragon-ball">Dragon Ball</option><option value="garfield">Garfield</option><option value="jorge-curioso">Jorge el Curioso</option><option value="plaza-sesamo">Plaza Sésamo</option><option value="bob-esponja">Bob Esponja</option><option value="looney-tunes">Looney Tunes</option></select><p class="hint">Selecciona una licencia o deja la detección automática por el nombre del personaje.</p></div>
         <label for="description">Descripción</label>
         <textarea id="description" rows="3" maxlength="3000"
           placeholder="Describe el peluche"></textarea>
@@ -144,8 +146,13 @@
   const SPECIAL_OFFER_MARKER='[[VP_OFERTA_ESPECIAL]]';
   const hasSpecialOffer=p=>String(p.description||'').includes(SPECIAL_OFFER_MARKER);
   const isAvailable=p=>!String(p.description||'').includes(SOLD_OUT_MARKER);
-  const cleanDescription=value=>String(value||'').split(SOLD_OUT_MARKER).join('').split(SPECIAL_OFFER_MARKER).join('').trim();
+  const cleanDescription=value=>String(value||'').replace(/\[\[VP_LICENCIA:[a-z-]+\]\]/g,'').split(SOLD_OUT_MARKER).join('').split(SPECIAL_OFFER_MARKER).join('').trim();
 
+  function syncLicenseField(){
+    const category=$('category').value;
+    $('licenseField').hidden=!['Peluches','Licencias'].includes(category);
+  }
+  $('category').addEventListener('change',syncLicenseField);
   function message(text) { $('message').textContent = text; }
 
   function showDashboard(user) {
@@ -271,6 +278,10 @@
     else if(category){
       const option=document.createElement('option');option.value=category;option.textContent=category+' (categoría actual)';option.dataset.legacy='true';categorySelect.append(option);categorySelect.value=category;
     }else categorySelect.value='';
+    const savedLicense=String(p.description||'').match(/\[\[VP_LICENCIA:([a-z-]+)\]\]/);
+    $('license').value=savedLicense?savedLicense[1]:'';
+    if(savedLicense)$('category').value='Licencias';
+    syncLicenseField();
     $('description').value = cleanDescription(p.description);
     $('available').value = isAvailable(p)?'yes':'no';
     $('specialOffer').checked = hasSpecialOffer(p);
@@ -285,6 +296,7 @@
 
   function resetForm() {
     $('productForm').reset();
+    syncLicenseField();
     $('productId').value = '';
     $('active').checked = true;
     $('specialOffer').checked = false;
@@ -302,14 +314,15 @@
       const { data: sessionData } = await db.auth.getSession();
       if (!sessionData.session) throw new Error('Inicia sesión de nuevo.');
 
+      if($('category').value==='Licencias'&&!$('license').value)throw new Error('Selecciona la licencia del peluche.');
       message('Guardando producto…');
       const imageUrl = await uploadPhoto($('photo').files[0]);
       const product = {
         name: $('name').value.trim(),
         price: Number($('price').value),
         size: $('size').value.trim(),
-        category: $('category').value.trim(),
-        description: cleanDescription($('description').value) + ($('available').value==='no'?'\n'+SOLD_OUT_MARKER:'') + ($('specialOffer').checked?'\n'+SPECIAL_OFFER_MARKER:''),
+        category: $('category').value==='Licencias'?'Peluches':$('category').value.trim(),
+        description: cleanDescription($('description').value) + (['Peluches','Licencias'].includes($('category').value)&&$('license').value?'\n[[VP_LICENCIA:'+$('license').value+']]':'') + ($('available').value==='no'?'\n'+SOLD_OUT_MARKER:'') + ($('specialOffer').checked?'\n'+SPECIAL_OFFER_MARKER:''),
         image_url: imageUrl,
         active: $('active').checked
       };
